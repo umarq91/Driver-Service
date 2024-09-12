@@ -38,9 +38,9 @@ export default function HeroPageClient() {
   };
 
   return (
-    <section className="bg-gray-100 bg-white text-gray-800">
-        <HeroPageServer/>
-      <div className="container mx-auto max-w-4xl">
+    <section className="bg-gray-100  text-gray-800">
+
+      <div className="container mx-auto max-w-5xl">
         <form onSubmit={handleSubmit} className="p-6 bg-gray-100 rounded-lg shadow-lg">
           <h2 className="text-2xl font-bold mb-6">Book Your Ride</h2>
 

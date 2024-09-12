@@ -1,23 +1,23 @@
-"use client"
+"use client";
 import React, { useState } from 'react';
 import { IoIosArrowRoundBack } from "react-icons/io";
 import emailjs from 'emailjs-com';
 import { carsData } from '@/lib/carData';
 import CarCards from '@/components/carCards';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import BookingSummary from './(components)/BookingSummary'; // Import server component
 
 function BookingPage() {
   const { toast } = useToast();
-  const location = useRouter();
-  const queryParams = new URLSearchParams(location.search);
+  const queryParams = useSearchParams();
+  const navigate = useRouter();
   const date = queryParams.get('date');
   const time = queryParams.get('time');
   const pickUpLocation = queryParams.get('pickUpLocation');
   const dropOffLocation = queryParams.get('dropOffLocation');
   const days = queryParams.get('days');
   const service = queryParams.get('service');
-  let navigate = useRouter();
 
   const [passengers, setPassengers] = useState('');
   const [suitcases, setSuitcases] = useState('');
@@ -33,16 +33,6 @@ function BookingPage() {
     luggage: ''
   });
 
-  const initialUserInfo = {
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    flightNumber: '',
-    message: '',
-    pax: '',
-    luggage: ''
-  };
-
   // Filter cars based on passengers and suitcases
   const filteredCars = carsData.filter(car => {
     const meetsPassengerCriteria = passengers === '' || car.numberofPeople >= parseInt(passengers);
@@ -56,17 +46,6 @@ function BookingPage() {
     setSuitcases(car.numberofSuitcases);
     setShowModal(true);
   };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    setSelectedCar(null);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUserInfo({ ...userInfo, [name]: value });
-  };
-
   const handleModalSubmit = (e) => {
     e.preventDefault();
     const emailContent = `
@@ -183,99 +162,67 @@ function BookingPage() {
     };
 
 
-  return (
-    <div className="min-h-screen font-poppins flex flex-col-reverse md:flex-row bg-gray-100 p-6 md:p-8">
-      {/* Booking Summary */}
-      <div className="w-full md:w-1/4 bg-white p-6 rounded-lg mb-6 md:mb-0">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Booking Summary</h1>
-        <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <div className="text-gray-400 uppercase text-sm">Date</div>
-            <div className="text-gray-800 text-base">{date}</div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="text-gray-400 uppercase text-sm">Time</div>
-            <div className="text-gray-800 text-base">{time}</div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="text-gray-400 uppercase text-sm">Pick Up Location</div>
-            <div className="text-gray-800 text-base">{pickUpLocation}</div>
-          </div>
-          {service === 'airportTransfer' && (
-            <div className="flex flex-col gap-2">
-              <div className="text-gray-400 uppercase text-sm">Drop Off Location</div>
-              <div className="text-gray-800 text-base">{dropOffLocation}</div>
+    return (
+      <div className="min-h-screen font-poppins flex flex-col-reverse md:flex-row bg-gray-100 p-6 md:p-8">
+        <BookingSummary
+          date={date}
+          time={time}
+          pickUpLocation={pickUpLocation}
+          dropOffLocation={dropOffLocation}
+          days={days}
+          service={service}
+        />
+        <div className="w-full md:w-3/4 bg-white md:p-6 rounded-lg ">
+          {/* Filter and Car Listings */}
+          {/* Filter */}
+          <div className="mb-6 bg-gray-100 px-6 py-8 rounded-lg ">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Filter Results</h2>
+            <div className="flex flex-col md:flex-row md:space-x-6">
+              <div className='w-full md:w-1/2 mb-4 md:mb-0'>
+                <label htmlFor="passengers" className="block text-gray-700 mb-2 font-medium">Passengers</label>
+                <select
+                  id="passengers"
+                  className="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={passengers}
+                  onChange={(e) => setPassengers(e.target.value)}
+                >
+                  <option value="">Any</option>
+                  {[...Array(7)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+              <div className='w-full md:w-1/2'>
+                <label htmlFor="suitcases" className="block text-gray-700 mb-2 font-medium">Suitcases</label>
+                <select
+                  id="suitcases"
+                  className="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={suitcases}
+                  onChange={(e) => setSuitcases(e.target.value)}
+                >
+                  <option value="">Any</option>
+                  {[...Array(5)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          )}
-          {service === 'fullDayChauffeur' && (
-            <div className="flex flex-col gap-2">
-              <div className="text-gray-400 uppercase text-sm">Days</div>
-              <div className="text-gray-800 text-base">{days}</div>
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <div className="text-gray-400 uppercase text-sm">Service Type</div>
-            <div className="text-gray-800 text-base capitalize">{service}</div>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className='w-2/3 flex justify-center items-center rounded-full py-2 hover:bg-opacity-80 text-sm lg:text-lg bg-gray-300'>
-            <IoIosArrowRoundBack size={20} />
-            Edit Booking
-          </button>
+  
+          {/* Car Listings */}
+          {filteredCars.map((car) => (
+            <CarCards
+              key={car.name}
+              car={car}
+              handleModalSubmit={handleModalSubmit}
+              userInfo={userInfo}
+              handleBookClick={handleBookClick}
+            />
+          ))}
         </div>
       </div>
-
-      {/* Right */}
-      {/* Filter and Car Listings */}
-      <div className="w-full md:w-3/4 bg-white md:p-6 rounded-lg ">
-        {/* Filter */}
-        <div className="mb-6 bg-gray-100 px-6 py-8 rounded-lg ">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Filter Results</h2>
-          <div className="flex flex-col md:flex-row md:space-x-6">
-            <div className='w-full md:w-1/2 mb-4 md:mb-0'>
-              <label htmlFor="passengers" className="block text-gray-700 mb-2 font-medium">Passengers</label>
-              <select
-                id="passengers"
-                className="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={passengers}
-                onChange={(e) => setPassengers(e.target.value)}
-              >
-                <option value="">Any</option>
-                {[...Array(7)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
-                ))}
-              </select>
-            </div>
-            <div className='w-full md:w-1/2'>
-              <label htmlFor="suitcases" className="block text-gray-700 mb-2 font-medium">Suitcases</label>
-              <select
-                id="suitcases"
-                className="block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={suitcases}
-                onChange={(e) => setSuitcases(e.target.value)}
-              >
-                <option value="">Any</option>
-                {[...Array(5)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Car Listings */}
-        {filteredCars.map((car) => (
-          <CarCards key={car.name} car={car}
-            handleModalSubmit={handleModalSubmit}
-            userInfo={userInfo}
-            handleChange={handleChange}
-            handleBookClick={handleBookClick}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default BookingPage;
+    );
+  }
+  
+  export default BookingPage;
+  
