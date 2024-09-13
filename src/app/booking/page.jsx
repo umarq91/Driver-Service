@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { IoIosArrowRoundBack } from "react-icons/io";
 import emailjs from 'emailjs-com';
 import { carsData } from '@/lib/carData';
@@ -10,157 +10,105 @@ import BookingSummary from './(components)/BookingSummary'; // Import server com
 
 function BookingPage() {
   const { toast } = useToast();
-  const queryParams = useSearchParams();
   const navigate = useRouter();
-  const date = queryParams.get('date');
-  const time = queryParams.get('time');
-  const pickUpLocation = queryParams.get('pickUpLocation');
-  const dropOffLocation = queryParams.get('dropOffLocation');
-  const days = queryParams.get('days');
-  const service = queryParams.get('service');
 
-  const [passengers, setPassengers] = useState('');
-  const [suitcases, setSuitcases] = useState('');
-  const [selectedCar, setSelectedCar] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [userInfo, setUserInfo] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    flightNumber: '',
-    message: '',
-    pax: '',
-    luggage: ''
-  });
+  // Define a separate component to handle search params logic
+  const BookingContent = () => {
+    const queryParams = useSearchParams();
+    const date = queryParams.get('date');
+    const time = queryParams.get('time');
+    const pickUpLocation = queryParams.get('pickUpLocation');
+    const dropOffLocation = queryParams.get('dropOffLocation');
+    const days = queryParams.get('days');
+    const service = queryParams.get('service');
 
-  // Filter cars based on passengers and suitcases
-  const filteredCars = carsData.filter(car => {
-    const meetsPassengerCriteria = passengers === '' || car.numberofPeople >= parseInt(passengers);
-    const meetsSuitcaseCriteria = suitcases === '' || car.numberofSuitcases >= parseInt(suitcases);
-    return meetsPassengerCriteria && meetsSuitcaseCriteria;
-  });
+    const [passengers, setPassengers] = useState('');
+    const [suitcases, setSuitcases] = useState('');
+    const [selectedCar, setSelectedCar] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [userInfo, setUserInfo] = useState({
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      flightNumber: '',
+      message: '',
+      pax: '',
+      luggage: ''
+    });
 
-  const handleBookClick = (car) => {
-    setSelectedCar(car);
-    setPassengers(car.numberofPeople);
-    setSuitcases(car.numberofSuitcases);
-    setShowModal(true);
-  };
-  const handleModalSubmit = (e) => {
-    e.preventDefault();
-    const emailContent = `
-    Offer Enquiry
+    // Filter cars based on passengers and suitcases
+    const filteredCars = carsData.filter(car => {
+      const meetsPassengerCriteria = passengers === '' || car.numberofPeople >= parseInt(passengers);
+      const meetsSuitcaseCriteria = suitcases === '' || car.numberofSuitcases >= parseInt(suitcases);
+      return meetsPassengerCriteria && meetsSuitcaseCriteria;
+    });
 
-    This is a new offer enquiry for a Apollo transport service.
+    const handleBookClick = (car) => {
+      setSelectedCar(car);
+      setPassengers(car.numberofPeople);
+      setSuitcases(car.numberofSuitcases);
+      setShowModal(true);
+    };
 
-    Booking Details:
-    Date: ${date}
-    Time: ${time}
-    Pick Up Location: ${pickUpLocation}
-    ${dropOffLocation && ` Drop Off Location: ${dropOffLocation}` }
-   ${days && ` Days: ${days}` }
-    Service: ${service}
-
-    Car Name: ${selectedCar.name}
-    PaxCapacity: ${passengers}
-    luggageCapacity: ${suitcases}
-
-    User Information:
-    Full Name: ${userInfo.fullName}
-    Email: ${userInfo.email}
-    Flight Number: ${userInfo.flightNumber}
-    phone number : ${userInfo.phoneNumber}
-    pax: ${userInfo.numberOfPeople}
-    luggage: ${userInfo.numberOfSuitcases}
-    Message: ${userInfo.message}
-  `;
-
-    emailjs.send('service_oxx754x', 'template_7uq7eqg', {
-      to_name: "Company Name", // Company Name
-      from_name: userInfo.fullName,
-      message: emailContent,
-    }, 'ZB0s5MrgpcBV07keG')
-      .then((response) => {
-        console.log('SUCCESS!', response.status, response.text);
-        setShowModal(false);
-        setSelectedCar(null);
-        setUserInfo(initialUserInfo);
-        toast({
-          title: "Email Sent",
-          description: `Requested a quote for ${selectedCar.name}`,
-          className: "bg-white text-gray-800"
-        });
-
-        // Send Copy To the Client email as well 
-        const clientMessage = `
-        Dear ${userInfo.fullName},
-
-        Thank you for choosing our services for your transportation needs. 
-
-        We have successfully received your booking request with the following details:
-
-        **Booking Details:**
+    const handleModalSubmit = (e) => {
+      e.preventDefault();
+      const emailContent = `
+        Offer Enquiry
+        Booking Details:
         Date: ${date}
         Time: ${time}
         Pick Up Location: ${pickUpLocation}
-        ${dropOffLocation ? `Drop Off Location: ${dropOffLocation}` : ''}
-        ${days ? `Days: ${days}` : ''}
+        ${dropOffLocation && ` Drop Off Location: ${dropOffLocation}` }
+        ${days && ` Days: ${days}` }
         Service: ${service}
-
-        **Car Details:**
         Car Name: ${selectedCar.name}
-        Pax Capacity: ${passengers}
-        Luggage Capacity: ${suitcases}
-
-        **User Information:**
+        PaxCapacity: ${passengers}
+        luggageCapacity: ${suitcases}
+        User Information:
         Full Name: ${userInfo.fullName}
         Email: ${userInfo.email}
-        Phone Number: ${userInfo.phoneNumber}
         Flight Number: ${userInfo.flightNumber}
+        phone number : ${userInfo.phoneNumber}
+        pax: ${userInfo.pax}
+        luggage: ${userInfo.luggage}
         Message: ${userInfo.message}
+      `;
 
-        Our team is now processing your request and will get back to you shortly with a confirmation and further details.
-
-        If you have any questions or need to make changes to your booking, please do not hesitate to contact us.
-
-        For cancellation or additional information, please do not hesitate to contact us.
-        Email : info@atsworld.com
-        
-
-        Best regards,
-        Apollo transport service
-        `;
-
-        emailjs.send('service_oxx754x', 'template_fdjemvn', {
-          to_email: userInfo.email,
-          from_name: "Luxury Transport & Chauffeur Service",
-          message: clientMessage,
-        }, 'ZB0s5MrgpcBV07keG').then((response) => {
-          console.log('SUCCESS!', response.status, response.text);
-        }).catch((error) => {
+      emailjs.send('service_oxx754x', 'template_7uq7eqg', {
+        to_name: "Company Name",
+        from_name: userInfo.fullName,
+        message: emailContent,
+      }, 'ZB0s5MrgpcBV07keG')
+        .then(() => {
+          setShowModal(false);
+          setSelectedCar(null);
+          setUserInfo({
+            fullName: '',
+            email: '',
+            phoneNumber: '',
+            flightNumber: '',
+            message: '',
+            pax: '',
+            luggage: ''
+          });
+          toast({
+            title: "Email Sent",
+            description: `Requested a quote for ${selectedCar.name}`,
+            className: "bg-white text-gray-800"
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }).catch(() => {
+          setShowModal(false);
+          setSelectedCar(null);
           toast({
             title: "Email Failed",
             description: 'Failed to send booking request.',
             className: "bg-white text-red-800"
-          })
-        })
-
-      }, (error) => {
-        console.log('FAILED...', error);
-        setShowModal(false);
-        setSelectedCar(null);
-        setUserInfo(initialUserInfo);
-        toast({
-          title: "Email Failed",
-          description: 'Failed to send booking request.',
-          className: "bg-white text-red-800"
+          });
         });
-      });
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000);
     };
-
 
     return (
       <div className="min-h-screen font-poppins flex flex-col-reverse md:flex-row bg-gray-100 p-6 md:p-8">
@@ -173,8 +121,6 @@ function BookingPage() {
           service={service}
         />
         <div className="w-full md:w-3/4 bg-white md:p-6 rounded-lg ">
-          {/* Filter and Car Listings */}
-          {/* Filter */}
           <div className="mb-6 bg-gray-100 px-6 py-8 rounded-lg ">
             <h2 className="text-xl font-semibold mb-4 text-gray-800">Filter Results</h2>
             <div className="flex flex-col md:flex-row md:space-x-6">
@@ -208,8 +154,7 @@ function BookingPage() {
               </div>
             </div>
           </div>
-  
-          {/* Car Listings */}
+
           {filteredCars.map((car) => (
             <CarCards
               key={car.name}
@@ -222,7 +167,13 @@ function BookingPage() {
         </div>
       </div>
     );
-  }
-  
-  export default BookingPage;
-  
+  };
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingContent />
+    </Suspense>
+  );
+}
+
+export default BookingPage;
