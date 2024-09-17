@@ -1,3 +1,5 @@
+const { Poppins } = require('next/font/google');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
@@ -50,6 +52,10 @@ module.exports = {
   				'5': 'hsl(var(--chart-5))'
   			}
   		},
+		fontFamily: {
+			poppins: ['var(--font-poppins)', 'sans-serif'],
+		}
+		,
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
